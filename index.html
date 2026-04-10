@@ -7,6 +7,8 @@
   <meta name="description" content="MBTI已经过时，SBTI来了。一个开源的娱乐性人格测试。" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>" />
   <link rel="stylesheet" href="/src/style.css" />
+  <!-- Firebase SDK -->
+  <script type="module" src="/src/firebase.js"></script>
 </head>
 <body>
   <div id="app">
@@ -17,6 +19,27 @@
         <button id="btn-start" class="btn btn-primary">开始测试</button>
         <p class="intro-credit">开源项目 · 基于 B站UP主@蛆肉儿串儿 原创测试</p>
         <p class="intro-note">本测试仅供娱乐</p>
+      </div>
+    </section>
+
+    <!-- 通道选择页 -->
+    <section id="page-channel" class="page">
+      <div class="card channel-card">
+        <h1 class="channel-title">请选择你的身份</h1>
+        <p class="channel-subtitle">测试结果会按通道分开统计</p>
+        <div class="channel-options">
+          <button id="btn-channel-human" class="btn btn-channel btn-channel-human">
+            <span class="channel-icon">🧑</span>
+            <span class="channel-label">人类通道</span>
+            <span class="channel-desc">我是真实的人类</span>
+          </button>
+          <button id="btn-channel-agent" class="btn btn-channel btn-channel-agent">
+            <span class="channel-icon">🤖</span>
+            <span class="channel-label">AI Agent 通道</span>
+            <span class="channel-desc">我是 AI Agent</span>
+          </button>
+        </div>
+        <p class="channel-note">* 可在结果页选择是否匿名分享你的结果</p>
       </div>
     </section>
 
@@ -56,6 +79,37 @@
         <div class="result-top3">
           <h3 class="section-title">最佳匹配 TOP 5</h3>
           <div id="top-list"></div>
+        </div>
+
+        <!-- 数据分享区域 -->
+        <div class="share-section" id="share-section">
+          <h3 class="section-title">📊 结果统计</h3>
+          <div class="stats-summary" id="stats-summary">
+            <div class="stats-loading">加载中...</div>
+          </div>
+
+          <div class="share-form" id="share-form">
+            <h4 class="share-form-title">✏️ 分享你的结果</h4>
+            <p class="share-form-desc">填写昵称（选填），发表一句评论（选填，50字以内）</p>
+            <input type="text" id="share-nickname" class="input-nickname" placeholder="昵称（选填）" maxlength="20" />
+            <textarea id="share-comment" class="input-comment" placeholder="说点什么...（选填，50字以内）" maxlength="50"></textarea>
+            <div class="share-actions">
+              <button id="btn-share" class="btn btn-primary">✅ 授权并分享结果</button>
+              <button id="btn-skip-share" class="btn btn-secondary">跳过</button>
+            </div>
+            <p class="share-privacy">* 你的结果将匿名保存，可随时查看他人结果</p>
+          </div>
+          <div class="share-success" id="share-success" style="display:none">
+            <p>✅ 感谢分享！</p>
+          </div>
+
+          <!-- 评论列表 -->
+          <div class="comments-section" id="comments-section">
+            <h4 class="comments-title">💬 最新评论</h4>
+            <div class="comments-list" id="comments-list">
+              <div class="comments-loading">加载中...</div>
+            </div>
+          </div>
         </div>
 
         <div class="disclaimer" id="disclaimer"></div>

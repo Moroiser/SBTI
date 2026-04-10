@@ -3,6 +3,8 @@ import { createQuiz } from './quiz.js'
 import { renderResult } from './result.js'
 import './style.css'
 
+let selectedChannel = null
+
 async function loadJSON(path) {
   const res = await fetch(path)
   return res.json()
@@ -18,34 +20,55 @@ async function init() {
 
   const pages = {
     intro: document.getElementById('page-intro'),
+    channel: document.getElementById('page-channel'),
     quiz: document.getElementById('page-quiz'),
     result: document.getElementById('page-result'),
   }
 
   function showPage(name) {
     Object.values(pages).forEach((p) => p.classList.remove('active'))
-    pages[name].classList.add('active')
+    if (pages[name]) pages[name].classList.add('active')
     window.scrollTo(0, 0)
   }
 
-  function onQuizComplete(answers, isDrunk) {
-    const scores = calcDimensionScores(answers, questions.main)
-    const levels = scoresToLevels(scores, config.scoring.levelThresholds)
-    const result = determineResult(levels, dimensions.order, types.standard, types.special, { isDrunk })
-    renderResult(result, levels, dimensions.order, dimensions.definitions, config)
+  let currentResult = null
+  let currentLevels = null
+  let currentAnswers = null
+  let isDrunk = false
+
+  function onQuizComplete(answers, result, levels, drunk) {
+    currentAnswers = answers
+    currentResult = result
+    currentLevels = levels
+    isDrunk = drunk
+    renderResult(result, levels, dimensions.order, dimensions.definitions, config, selectedChannel)
     showPage('result')
   }
 
-  const quiz = createQuiz(questions, config, onQuizComplete)
+  const quiz = createQuiz(questions, dimensions, types, config, onQuizComplete)
 
+  // 首页 → 通道选择
   document.getElementById('btn-start').addEventListener('click', () => {
+    showPage('channel')
+  })
+
+  // 通道选择 → 答题
+  document.getElementById('btn-channel-human').addEventListener('click', () => {
+    selectedChannel = 'human'
     quiz.start()
     showPage('quiz')
   })
 
-  document.getElementById('btn-restart').addEventListener('click', () => {
+  document.getElementById('btn-channel-agent').addEventListener('click', () => {
+    selectedChannel = 'agent'
     quiz.start()
     showPage('quiz')
+  })
+
+  // 重新测试 → 回到通道选择
+  document.getElementById('btn-restart').addEventListener('click', () => {
+    selectedChannel = null
+    showPage('channel')
   })
 }
 

@@ -1,6 +1,6 @@
 import { drawRadar } from './chart.js'
 import { generateShareImage } from './share.js'
-import { saveResult, getStats, getComments } from './firebase.js'
+import { saveResult, getStats, getComments } from './api.js'
 
 const LEVEL_LABEL = { L: '低', M: '中', H: '高' }
 const LEVEL_CLASS = { L: 'level-low', M: 'level-mid', H: 'level-high' }

@@ -1,6 +1,7 @@
 import { calcDimensionScores, scoresToLevels, determineResult } from './engine.js'
 import { createQuiz } from './quiz.js'
 import { renderResult } from './result.js'
+import { startTest } from './api.js'
 import './style.css'
 
 let selectedChannel = null
@@ -53,14 +54,24 @@ async function init() {
   })
 
   // 通道选择 → 答题
-  document.getElementById('btn-channel-human').addEventListener('click', () => {
+  document.getElementById('btn-channel-human').addEventListener('click', async () => {
     selectedChannel = 'human'
+    try {
+      await startTest()
+    } catch (e) {
+      console.warn('获取验证码失败:', e.message)
+    }
     quiz.start()
     showPage('quiz')
   })
 
-  document.getElementById('btn-channel-agent').addEventListener('click', () => {
+  document.getElementById('btn-channel-agent').addEventListener('click', async () => {
     selectedChannel = 'agent'
+    try {
+      await startTest()
+    } catch (e) {
+      console.warn('获取验证码失败:', e.message)
+    }
     quiz.start()
     showPage('quiz')
   })

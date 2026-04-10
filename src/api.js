@@ -1,12 +1,13 @@
 /**
- * SBTI REST API — 自建服务器版本
+ * SBTI REST API — 自建服务器版本（无密钥设计）
  * 调用 sbti.morois.cn 后端
- * 
- * 配置：API_BASE_URL（见下方）
+ * 安全机制：验证码 + session token + IP频率限制
  */
 
-const API_BASE_URL = 'https://sbti.morois.cn/api';
-const API_KEY = 'sbti-api-secret-2026-morois';
+const API_BASE_URL = 'https://sbti.morois.cn';
+
+const SESSION_KEY = 'sbti_session';
+const CODE_KEY = 'sbti_code';
 
 // ===== Auth: 匿名用户 ID =====
 function getAnonymousId() {
@@ -18,17 +19,14 @@ function getAnonymousId() {
   return id;
 }
 
-// ===== 通用请求函数 =====
+// ===== 通用请求函数（无认证） =====
 async function apiRequest(method, path, body = null) {
   const opts = {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${API_KEY}`
-    }
+    headers: { 'Content-Type': 'application/json' }
   };
   if (body) opts.body = JSON.stringify(body);
-  
+
   const res = await fetch(`${API_BASE_URL}${path}`, opts);
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
@@ -37,13 +35,26 @@ async function apiRequest(method, path, body = null) {
   return res.json();
 }
 
-// ===== 公开接口 =====
+// ===== 开始测试 → 获取验证码 =====
+export async function startTest() {
+  const resp = await apiRequest('POST', '/api/start-test');
+  localStorage.setItem(SESSION_KEY, resp.sessionToken);
+  localStorage.setItem(CODE_KEY, resp.code);
+  return resp; // { sessionToken, code }
+}
 
-/**
- * 保存用户测试结果
- */
+// ===== 保存结果（需要 sessionToken + code） =====
 export async function saveResult(data) {
+  const sessionToken = localStorage.getItem(SESSION_KEY);
+  const code = localStorage.getItem(CODE_KEY);
+
+  if (!sessionToken || !code) {
+    throw new Error('验证码已失效，请刷新页面重新开始测试');
+  }
+
   return apiRequest('POST', '/api/save-result', {
+    sessionToken,
+    code,
     channel: data.channel || 'feishu',
     typeCode: data.typeCode,
     typeName: data.typeName,
@@ -53,6 +64,8 @@ export async function saveResult(data) {
     levels: data.levels || {}
   });
 }
+
+// ===== 公开接口（无需认证） =====
 
 /**
  * 获取某通道的人格统计

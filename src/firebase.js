@@ -1,11 +1,11 @@
 /**
  * SBTI REST API — 自建服务器版本
- * 调用 morois.cn/sbti-api 后端
+ * 调用 sbti.morois.cn 后端
  * 
  * 配置：API_BASE_URL（见下方）
  */
 
-const API_BASE_URL = 'https://morois.cn/sbti-api';
+const API_BASE_URL = 'https://sbti.morois.cn/api';
 const API_KEY = 'sbti-api-secret-2026-morois';
 
 // ===== Auth: 匿名用户 ID =====

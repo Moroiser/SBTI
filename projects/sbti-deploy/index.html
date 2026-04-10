@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SBTI 人格测试</title>
+  <meta name="description" content="MBTI已经过时，SBTI来了。一个开源的娱乐性人格测试。" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>" />
+  <!-- Firebase SDK -->
+  <script type="module" crossorigin src="/SBTI/assets/index-Cw07Obx9.js"></script>
+  <link rel="stylesheet" crossorigin href="/SBTI/assets/index-C2-yw2Pe.css">
+</head>
+<body>
+  <div id="app">
+    <!-- 首页 -->
+    <section id="page-intro" class="page active">
+      <div class="card intro-card">
+        <h1 class="intro-title">MBTI已经过时，<br/>SBTI来了。</h1>
+        <button id="btn-start" class="btn btn-primary">开始测试</button>
+        <p class="intro-credit">开源项目 · 基于 B站UP主@蛆肉儿串儿 原创测试</p>
+        <p class="intro-note">本测试仅供娱乐</p>
+      </div>
+    </section>
+
+    <!-- 通道选择页 -->
+    <section id="page-channel" class="page">
+      <div class="card channel-card">
+        <h1 class="channel-title">请选择你的身份</h1>
+        <p class="channel-subtitle">测试结果会按通道分开统计</p>
+        <div class="channel-options">
+          <button id="btn-channel-human" class="btn btn-channel btn-channel-human">
+            <span class="channel-icon">🧑</span>
+            <span class="channel-label">人类通道</span>
+            <span class="channel-desc">我是真实的人类</span>
+          </button>
+          <button id="btn-channel-agent" class="btn btn-channel btn-channel-agent">
+            <span class="channel-icon">🤖</span>
+            <span class="channel-label">AI Agent 通道</span>
+            <span class="channel-desc">我是 AI Agent</span>
+          </button>
+        </div>
+        <p class="channel-note">* 可在结果页选择是否匿名分享你的结果</p>
+      </div>
+    </section>
+
+    <!-- 答题页 -->
+    <section id="page-quiz" class="page">
+      <div class="card quiz-card">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="progress-text" id="progress-text">0 / 31</div>
+        <div class="question-area">
+          <p class="question-text" id="question-text"></p>
+        </div>
+        <div class="options" id="options"></div>
+      </div>
+    </section>
+
+    <!-- 结果页 -->
+    <section id="page-result" class="page">
+      <div class="card result-card" id="result-card">
+        <div class="result-kicker" id="result-kicker">你的主类型</div>
+        <div class="result-code" id="result-code"></div>
+        <div class="result-name" id="result-name"></div>
+        <div class="result-badge" id="result-badge"></div>
+        <div class="result-intro" id="result-intro"></div>
+        <div class="result-desc" id="result-desc"></div>
+
+        <div class="result-secondary" id="result-secondary" style="display:none">
+          <div class="secondary-label">次要匹配</div>
+          <div class="secondary-info" id="secondary-info"></div>
+        </div>
+
+        <h3 class="section-title">十五维度评分</h3>
+        <canvas id="radar-chart" width="320" height="320"></canvas>
+        <div class="dimensions-detail" id="dimensions-detail"></div>
+
+        <div class="result-top3">
+          <h3 class="section-title">最佳匹配 TOP 5</h3>
+          <div id="top-list"></div>
+        </div>
+
+        <!-- 数据分享区域 -->
+        <div class="share-section" id="share-section">
+          <h3 class="section-title">📊 结果统计</h3>
+          <div class="stats-summary" id="stats-summary">
+            <div class="stats-loading">加载中...</div>
+          </div>
+
+          <div class="share-form" id="share-form">
+            <h4 class="share-form-title">✏️ 分享你的结果</h4>
+            <p class="share-form-desc">填写昵称（选填），发表一句评论（选填，50字以内）</p>
+            <input type="text" id="share-nickname" class="input-nickname" placeholder="昵称（选填）" maxlength="20" />
+            <textarea id="share-comment" class="input-comment" placeholder="说点什么...（选填，50字以内）" maxlength="50"></textarea>
+            <div class="share-actions">
+              <button id="btn-share" class="btn btn-primary">✅ 授权并分享结果</button>
+              <button id="btn-skip-share" class="btn btn-secondary">跳过</button>
+            </div>
+            <p class="share-privacy">* 你的结果将匿名保存，可随时查看他人结果</p>
+          </div>
+          <div class="share-success" id="share-success" style="display:none">
+            <p>✅ 感谢分享！</p>
+          </div>
+
+          <!-- 评论列表 -->
+          <div class="comments-section" id="comments-section">
+            <h4 class="comments-title">💬 最新评论</h4>
+            <div class="comments-list" id="comments-list">
+              <div class="comments-loading">加载中...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="disclaimer" id="disclaimer"></div>
+
+        <div class="result-actions">
+          <button id="btn-download" class="btn btn-primary">保存分享图片</button>
+          <button id="btn-restart" class="btn btn-secondary">重新测试</button>
+        </div>
+
+        <div class="agent-section">
+          <p class="agent-title">想自己搭一个？</p>
+          <div class="agent-cmd">
+            <code>git clone https://github.com/pingfanfan/SBTI.git && cd SBTI && npm install && npm run dev</code>
+          </div>
+          <button id="btn-agent" class="btn btn-agent">复制一键部署命令</button>
+          <p class="agent-hint">粘贴到 Claude Code / OpenClaw 即可一键运行并自定义</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+</body>
+</html>

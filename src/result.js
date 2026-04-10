@@ -270,7 +270,14 @@ async function loadComments(typeCode) {
 
     let html = ''
     comments.forEach(c => {
-      const time = c.createdAt ? new Date(c.createdAt.seconds * 1000).toLocaleDateString('zh-CN') : ''
+      const time = c.createdAt ? (() => {
+        const ms = c.createdAt.seconds
+          ? c.createdAt.seconds * 1000
+          : new Date(c.createdAt).getTime();
+        const d = new Date(ms);
+        const pad = n => n.toString().padStart(2, '0');
+        return isNaN(ms) ? '' : `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      })() : ''
       html += `
         <div class="comment-item">
           <div class="comment-header">

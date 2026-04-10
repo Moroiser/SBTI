@@ -1,73 +1,59 @@
 /**
- * CloudBase 集成 — SBTI 项目
- * 替代 Firebase Firestore，使用腾讯云开发 REST API 实现数据存取
+ * Firebase Firestore REST API — SBTI 项目
+ * 通过原生 Firestore REST API 实现数据存取
+ * 注意：Firebase SDK在国内加载失败，但 REST API 可以正常访问
  * 
- * 配置：环境 ID + API Key（见下方 CLOUDBASE_CONFIG）
- * 
- * CloudBase REST API 端点格式：
- *   POST https://{envId}-{envRegion}.app.tcloudbase.com/tcb/doc/query
- *   POST https://{envId}-{envRegion}.app.tcloudbase.com/tcb/doc/add
+ * 配置：项目 ID + API Key（见下方 FIREBASE_CONFIG）
  */
 
-// ===== CloudBase 配置 =====
-const CLOUDBASE_CONFIG = {
-  envId: 'personal-home-7ggu1328c1a431d9',
-  // ⬆️ 环境 ID（必填）
+// ===== Firebase Firestore REST API 配置 =====
+const FIREBASE_CONFIG = {
+  projectId: 'sbti-personality-test',
+  apiKey: 'AIzaSyAfJ8W9QZbP7IKu3CKFKEZ5TSAetcF4fnc',
   
-  // ⬇️ 在腾讯云控制台 API Key 配置 页生成的 API Key（必填）
-  // 格式：eyJhbGciOiJSUzI1NiIsImtpZCI6I...
-  apiKey: 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjlkMWRjMzFlLWI0ZDAtNDQ4Yi1hNzZmLWIwY2M2M2Q4MTQ5OCJ9.eyJhdWQiOiJwZXJzb25hbC1ob21lLTdnZ3UxMzI4YzFhNDMxZDkiLCJleHAiOjI1MzQwMjMwMDc5OSwiaWF0IjoxNzc1ODA4OTMyLCJhdF9oYXNoIjoicnBhcHBIQW9SUWV2MHZDbjRIcXB2ZyIsInByb2plY3RfaWQiOiJwZXJzb25hbC1ob21lLTdnZ3UxMzI4YzFhNDMxZDkiLCJtZXRhIjp7InBsYXRmb3JtIjoiQXBpS2V5In0sImFkbWluaXN0cmF0b3JfaWQiOiIyMDMxNjA1Mzc2NTg1NDk4NjI2IiwidXNlcl90eXBlIjoiIiwiY2xpZW50X3R5cGUiOiJjbGllbnRfc2VydmVyIiwiaXNfc3lzdGVtX2FkbWluIjp0cnVlfQ.l9JXKZtsvAJ7GCCnPzfcOvmmwGRQG-5uypLFRqPPkPEB_cNuiX1yCkVQY22tUm7CTSuo4Y_5YhDWEuKAePZT28lLoch-RwUpeB6_w9rQQ_V1j5vQi53ghtzgzGXsChrVIrPcINHsksEN4RH11c4Ia5T1tKx4j7akhSKwwLT13V_AZhpAjsZ7sBec-5hS3u2zK5O6p39CQ2X08w3r0aTU4FR4j2pOEaEjnxnvZ0MrqfdBp3vAL5Fc-EDJJX2PBKpx6uHtlb8dhDYAco-FBwCCKgmnoJuQWNEN4tHFc2mP6_3TM_vc5cwh-mDlwSoDkyE5vV9ld5XAz6jTjlad_hEbWA', 
-  
-  // HTTP 访问服务域名（自动拼接）
   get baseUrl() {
-    return `https://personal-home-7ggu1328c1a431d9-1319284967.ap-shanghai.app.tcloudbase.com`
+    return `https://firestore.googleapis.com/v1/projects/${this.projectId}/databases/(default)/documents`;
   }
 };
 
-// 集合名称（需在 CloudBase 控制台创建）
+// 集合名称
 const COLLECTION_RESULTS = 'results';
 
 /**
- * 通用请求封装
+ * 通用 GET 请求（查询）
  */
-async function cbRequest(action, payload) {
-  const { baseUrl, apiKey } = CLOUDBASE_CONFIG;
-  
-  if (!apiKey) {
-    throw new Error('CloudBase API Key 未配置！请在 firebase.js 中填入你的 API Key。');
-  }
-  
-  const response = await fetch(`${baseUrl}/tcb/${action}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-API-KEY': apiKey,
-      'Authorization': `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      env: CLOUDBASE_CONFIG.envId,
-      collectionName: COLLECTION_RESULTS,
-      ...payload
-    })
+async function fbGet(action, params = {}) {
+  const { baseUrl, apiKey } = FIREBASE_CONFIG;
+  const qs = new URLSearchParams({ key: apiKey, ...params }).toString();
+  const response = await fetch(`${baseUrl}:${action}?${qs}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
   });
-  
   if (!response.ok) {
-    throw new Error(`CloudBase 请求失败: HTTP ${response.status}`);
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `Firebase GET 失败: HTTP ${response.status}`);
   }
-  
-  const result = await response.json();
-  
-  // 检查业务错误
-  if (result.error) {
-    const msg = result.error_message || result.error || '未知错误';
-    throw new Error(`CloudBase 错误: ${msg}`);
+  return response.json();
+}
+
+/**
+ * 通用 POST 请求（添加/执行）
+ */
+async function fbPost(action, body) {
+  const { baseUrl, apiKey } = FIREBASE_CONFIG;
+  const response = await fetch(`${baseUrl}:${action}?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `Firebase POST 失败: HTTP ${response.status}`);
   }
-  
-  return result;
+  return response.json();
 }
 
 // ===== 模拟 Auth（匿名用户 ID） =====
-// 静态网站无法真正做匿名认证，这里生成一个随机 ID 模拟
 function getAnonymousId() {
   let id = localStorage.getItem('sbti_anonymous_id');
   if (!id) {
@@ -78,69 +64,132 @@ function getAnonymousId() {
 }
 
 /**
- * 保存用户结果到 CloudBase
+ * 将本地 levels 对象转换为 Firebase 格式
+ */
+function toFirebaseLevels(levels) {
+  const result = {};
+  for (const [k, v] of Object.entries(levels)) {
+    result[k] = { stringValue: v };
+  }
+  return result;
+}
+
+/**
+ * 将 Firebase 文档转换为本地格式
+ */
+function fromFirestoreDoc(doc) {
+  if (!doc.fields) return null;
+  const f = doc.fields;
+  // 解析 levels 字段（mapValue）
+  let levels = {};
+  if (f.levels?.mapValue?.fields) {
+    for (const [k, v] of Object.entries(f.levels.mapValue.fields)) {
+      levels[k] = v.stringValue || v.integerValue || v;
+    }
+  }
+  return {
+    id: doc.name?.split('/').pop(),
+    userId: f.userId?.stringValue,
+    channel: f.channel?.stringValue,
+    typeCode: f.typeCode?.stringValue,
+    typeName: f.typeName?.stringValue,
+    nickname: f.nickname?.stringValue || '匿名',
+    comment: f.comment?.stringValue || '',
+    similarity: parseInt(f.similarity?.integerValue || f.similarity?.stringValue || '0'),
+    levels,
+    createdAt: f.createdAt?.timestampValue || f.createdAt?.stringValue,
+  };
+}
+
+/**
+ * 保存用户结果到 Firebase Firestore
  * @param {Object} data
- * @param {string} data.channel - "human" | "agent"
- * @param {string} data.typeCode - 人格代码
- * @param {string} data.typeName - 人格名称
- * @param {string} data.nickname - 昵称（可选）
- * @param {string} data.comment - 评论（可选，最多50字）
- * @param {number} data.similarity - 相似度
- * @param {Object} data.levels - 各维度等级
  */
 export async function saveResult(data) {
-  const result = await cbRequest('doc/add', {
-    data: {
-      ...data,
-      userId: getAnonymousId(),
-      createdAt: new Date().toISOString(),
-      timestamp: Date.now()
+  const doc = {
+    fields: {
+      userId: { stringValue: getAnonymousId() },
+      channel: { stringValue: data.channel || 'human' },
+      typeCode: { stringValue: data.typeCode },
+      typeName: { stringValue: data.typeName },
+      nickname: { stringValue: data.nickname || '匿名' },
+      comment: { stringValue: data.comment || '' },
+      similarity: { integerValue: String(data.similarity) },
+      levels: { mapValue: { fields: toFirebaseLevels(data.levels) } },
+      createdAt: { timestampValue: new Date().toISOString() },
     }
-  });
+  };
   
-  // 更新统计计数（简单方式：先查后更新，或直接记录到统计集合）
-  // 这里直接用 addDoc 会自动创建统计文档
-  // 注：CloudBase 免费版没有原子递增，我们这里不做计数更新
-  console.log('结果已保存到 CloudBase:', result);
+  const result = await fbPost(`documents/${COLLECTION_RESULTS}`, doc);
+  console.log('结果已保存到 Firebase:', result);
   return result;
 }
 
 /**
  * 获取某通道的人格统计
  * @param {string} channel - "human" | "agent"
- * @returns {Promise<Array>} [{ typeCode, typeName, count, channel }, ...]
+ * @returns {Promise<Array>}
  */
 export async function getStats(channel) {
-  // 查询该通道的所有结果，内存中聚合统计
-  const result = await cbRequest('doc/query', {
-    query: {
-      channel: channel
-    },
-    limit: 1000, // 免费版限制
-    orderBy: {
-      fieldName: 'timestamp',
-      order: 'desc'
-    }
-  });
-  
-  const docs = result.data || [];
-  
-  // 内存中聚合
+  // Firestore REST API 不支持服务端聚合，分页获取后在内存聚合
+  // 先查该通道最新几条确认能通，再按实际需求获取
   const statsMap = {};
-  docs.forEach(doc => {
-    const key = `${doc.channel}_${doc.typeCode}`;
-    if (!statsMap[key]) {
-      statsMap[key] = {
-        typeCode: doc.typeCode,
-        typeName: doc.typeName,
-        channel: doc.channel,
-        count: 0
-      };
-    }
-    statsMap[key].count++;
-  });
+  let pageToken = undefined;
   
-  // 转为数组并按计数降序排列
+  do {
+    const params = { pageSize: 1000 };
+    if (pageToken) params.pageToken = pageToken;
+    
+    // 查询条件：channel = ?
+    // Firestore REST API 的 structured query 在 documents 端点不支持直接 field filter，
+    // 改用 collection group query 或先获取全量再客户端过滤
+    // 由于数据量可能较大，我们用 filter 参数
+    const filterParam = `channel=${encodeURIComponent(channel)}`;
+    
+    let url = `${FIREBASE_CONFIG.baseUrl}/${COLLECTION_RESULTS}?key=${FIREBASE_CONFIG.apiKey}&pageSize=1000`;
+    if (pageToken) url += `&pageToken=${pageToken}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    if (!response.ok) {
+      // 如果全部获取失败（比如项目是空的），返回空统计
+      console.warn('Firebase 查询失败，返回空统计');
+      break;
+    }
+    
+    const data = await response.json();
+    const docs = data.documents || [];
+    
+    for (const doc of docs) {
+      const f = doc.fields || {};
+      const docChannel = f.channel?.stringValue;
+      const docTypeCode = f.typeCode?.stringValue;
+      const docTypeName = f.typeName?.stringValue;
+      
+      // 客户端过滤 channel
+      if (docChannel !== channel) continue;
+      
+      const key = docTypeCode;
+      if (!statsMap[key]) {
+        statsMap[key] = {
+          typeCode: docTypeCode,
+          typeName: docTypeName,
+          channel: docChannel,
+          count: 0
+        };
+      }
+      statsMap[key].count++;
+    }
+    
+    pageToken = data.nextPageToken;
+    // 无更多数据
+    if (!pageToken) break;
+    
+  } while (Object.keys(statsMap).length < 100); // 最多聚合100种类型
+  
   const stats = Object.values(statsMap).sort((a, b) => b.count - a.count);
   return stats;
 }
@@ -149,37 +198,55 @@ export async function getStats(channel) {
  * 获取某通道+某人格的最新评论
  * @param {string} channel
  * @param {string} typeCode
- * @param {number} count - 返回数量
+ * @param {number} count
  * @returns {Promise<Array>}
  */
 export async function getComments(channel, typeCode, count = 20) {
-  // CloudBase 查询条件
-  const query = {
-    channel: channel,
-    comment: { $ne: '' } // 有评论的记录
-  };
+  let pageToken = undefined;
+  const comments = [];
   
-  if (typeCode !== 'ALL') {
-    query.typeCode = typeCode;
-  }
-  
-  const result = await cbRequest('doc/query', {
-    query: query,
-    limit: count,
-    orderBy: {
-      fieldName: 'timestamp',
-      order: 'desc'
+  do {
+    let url = `${FIREBASE_CONFIG.baseUrl}/${COLLECTION_RESULTS}?key=${FIREBASE_CONFIG.apiKey}&pageSize=100`;
+    if (pageToken) url += `&pageToken=${pageToken}`;
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    if (!response.ok) break;
+    const data = await response.json();
+    const docs = data.documents || [];
+    
+    for (const doc of docs) {
+      const f = doc.fields || {};
+      const docChannel = f.channel?.stringValue;
+      const docTypeCode = f.typeCode?.stringValue;
+      const docComment = f.comment?.stringValue || '';
+      
+      if (docChannel !== channel) continue;
+      if (typeCode !== 'ALL' && docTypeCode !== typeCode) continue;
+      if (!docComment.trim()) continue;
+      
+      comments.push({
+        id: doc.name?.split('/').pop(),
+        typeCode: docTypeCode,
+        typeName: f.typeName?.stringValue,
+        nickname: f.nickname?.stringValue || '匿名',
+        comment: docComment,
+        similarity: parseInt(f.similarity?.integerValue || '0'),
+        createdAt: f.createdAt?.timestampValue || f.createdAt?.stringValue,
+      });
+      
+      if (comments.length >= count) break;
     }
-  });
+    
+    pageToken = data.nextPageToken;
+    if (!pageToken || comments.length >= count) break;
+    
+  } while (comments.length < count);
   
-  const docs = result.data || [];
-  
-  // 过滤出有评论的记录
-  const comments = docs
-    .filter(doc => doc.comment && doc.comment.trim())
-    .slice(0, count);
-  
-  return comments;
+  return comments.slice(0, count);
 }
 
 /**
